@@ -86,6 +86,39 @@ actions:
 
 Use HA's automation UI to choose actual entities and triggers. Motion is polled, so a Motion sensor turns on up to one polling interval after the event; assess suitability before relying on it for time-sensitive automations.
 
+## Actions
+
+These act on Blink Plus camera entities (target `entity_id: camera.…`).
+
+| Action | What it does |
+|---|---|
+| `blink_plus.trigger_camera` | Takes a new snapshot, like the **Take snapshot** button: wakes the camera and waits until Blink has published the picture. |
+| `blink_plus.start_live_view` | Opens the camera's live view and keeps it open for `seconds` (default 60, at most the maximum live session), so a player or `play_audio` finds it streaming. Calling it again extends the time. Returns `state` (`idle`, `starting`, `streaming`), `holding`, `seconds` left, `cooldown_s` and `last_error`. A camera in cooldown is not touched. |
+| `blink_plus.stop_live_view` | Ends what `start_live_view` keeps open and closes the camera's live session. |
+| `blink_plus.play_audio` | Plays an audio file (`file_path`, any format PyAV reads: MP3, WAV, M4A …, at most 8 MB, the first 60 seconds) through the camera speaker. The live view must be open; if it is still starting, the action waits up to 20 seconds for it. The file must be in a folder Home Assistant allows (a media folder or `allowlist_external_dirs`). |
+
+Each camera entity has a `live_view_state` attribute (`idle`, `starting`, `streaming`) and `live_view_last_error`, so a script can wait for the live view:
+
+```yaml
+sequence:
+  - action: blink_plus.start_live_view
+    target:
+      entity_id: camera.front_door
+    data:
+      seconds: 75
+  - wait_template: "{{ state_attr('camera.front_door', 'live_view_state') == 'streaming' }}"
+    timeout: 40
+    continue_on_timeout: false
+  - action: blink_plus.play_audio
+    target:
+      entity_id: camera.front_door
+    data:
+      file_path: /media/sounds/be_right_there.mp3
+  - action: blink_plus.stop_live_view
+    target:
+      entity_id: camera.front_door
+```
+
 ## Two-way talk
 
 Talk uses the existing Live view option and camera entity. Open live video before posting audio. No new account login, entity or talk-specific option is required when updating from 0.1.x.

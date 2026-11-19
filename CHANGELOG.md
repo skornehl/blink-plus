@@ -8,6 +8,7 @@ Polling leaves the Sync Module alone.
 - No poll runs while one of the account's cameras is starting or showing a live view.
 - The polling interval can now be set down to 30 seconds.
 - Motion without a Blink plan: when the USB clip list is read, a newer clip in it turns the camera's Motion sensor on, just like a newer clip in Blink's cloud list. Clips already on the drive when Home Assistant starts are not reported as motion.
+- New actions for automations: `blink_plus.trigger_camera` (new snapshot), `blink_plus.start_live_view` (open the live view and keep it open for N seconds; returns its state), `blink_plus.stop_live_view` and `blink_plus.play_audio` (play an audio file through the camera speaker while the live view is open). Camera entities have a new `live_view_state` attribute (`idle`, `starting`, `streaming`) and `live_view_last_error`. See [Actions](docs/CONFIGURATION.md#actions).
 - These changes only apply to Blink Plus's own connection; the built-in Blink integration keeps blinkpy's behaviour. If a Home Assistant update ships a blinkpy without one of the replaced methods, Blink Plus logs a warning and uses blinkpy's behaviour for that part. Diagnostics list which reductions are active (`blinkpy_load_reductions`).
 
 ## 1.1.3 - 2026-11-17

@@ -62,5 +62,35 @@
                     "error":  {
                                   "invalid_options":  "Choose values within the displayed limits and select existing cameras."
                               }
-                }
+                },
+    "services":  {
+                     "trigger_camera":  {
+                                            "name":  "Take a snapshot",
+                                            "description":  "Asks the camera for a new picture (wakes it) and waits until Blink has published it."
+                                        },
+                     "start_live_view":  {
+                                             "name":  "Start live view",
+                                             "description":  "Opens the camera's live view and keeps it open, so a player or play_audio finds it streaming. Calling it again extends the time. Returns the live view state.",
+                                             "fields":  {
+                                                            "seconds":  {
+                                                                            "name":  "Seconds",
+                                                                            "description":  "How long to keep the live view open; at most the maximum live session."
+                                                                        }
+                                                        }
+                                         },
+                     "stop_live_view":  {
+                                            "name":  "Stop live view",
+                                            "description":  "Ends what start_live_view keeps open and closes the camera's live session."
+                                        },
+                     "play_audio":  {
+                                        "name":  "Play audio",
+                                        "description":  "Plays an audio file through the camera speaker while its live view is open (at most 60 seconds). Waits briefly for a live view that is still starting.",
+                                        "fields":  {
+                                                       "file_path":  {
+                                                                         "name":  "File",
+                                                                         "description":  "Absolute path of an audio file (MP3, WAV, M4A, ...) in a folder Home Assistant allows, for example under /media."
+                                                                     }
+                                                   }
+                                    }
+                 }
 }

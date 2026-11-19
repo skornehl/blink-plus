@@ -19,6 +19,7 @@ Live view and cloud browsing are enabled by default. A camera starts streaming w
 - A direct native MPEG-TS stream per camera for low-delay players and tools (`/api/blink_plus/live/<camera entity id>`, authenticated).
 - Native HA dashboard push-to-talk, authenticated microphone sessions and in-memory audio encoding.
 - An AAC talk API for other compatible clients (/api/blink_plus/talk/{entity_id}).
+- Actions for automations: take a snapshot, open and hold a live view, stop it, and play an audio file through the camera speaker (`blink_plus.trigger_camera`, `start_live_view`, `stop_live_view`, `play_audio`).
 - Cached camera images plus a button to request a fresh snapshot.
 - A **Record local clip** button that saves MP4 video and audio to Home Assistant media storage.
 - **Blink cloud clips** in the Media browser, grouped by account and camera, with thumbnails and seekable playback.

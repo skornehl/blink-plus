@@ -1,6 +1,9 @@
 """Self-contained Blink cameras, controls and sensors."""
 
+import voluptuous as vol
+from homeassistant.core import SupportsResponse
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import service
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from .const import DEFAULTS, DOMAIN, PLATFORMS
 from .coordinator import BlinkCoordinator
@@ -27,9 +30,43 @@ async def async_setup(hass, config):
         ]
     )
     microphone.setup(hass)
+    _register_actions(hass)
     # The camera card and push-to-talk element load by themselves: no dashboard Resource to add.
     await async_register_frontend(hass)
     return True
+
+
+def _register_actions(hass):
+    """Camera actions for automations; they act on Blink Plus camera entities."""
+    for name, schema, func, response in (
+        ("trigger_camera", {}, "async_trigger_camera", SupportsResponse.NONE),
+        (
+            "start_live_view",
+            {
+                vol.Optional("seconds", default=60): vol.All(
+                    vol.Coerce(int), vol.Range(min=1, max=300)
+                )
+            },
+            "async_start_live_view",
+            SupportsResponse.OPTIONAL,
+        ),
+        ("stop_live_view", {}, "async_stop_live_view", SupportsResponse.NONE),
+        (
+            "play_audio",
+            {vol.Required("file_path"): cv.string},
+            "async_play_audio",
+            SupportsResponse.OPTIONAL,
+        ),
+    ):
+        service.async_register_platform_entity_service(
+            hass,
+            DOMAIN,
+            name,
+            entity_domain="camera",
+            schema=schema,
+            func=func,
+            supports_response=response,
+        )
 
 
 async def async_setup_entry(hass, entry):

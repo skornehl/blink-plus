@@ -129,6 +129,15 @@ class NativeRelay:
         self.light = None
         self.light_event = asyncio.Event()
         self.light_listeners = set()
+        # Told when the live view starts, streams or ends (camera attributes).
+        self.state_listeners = set()
+
+    def _state_changed(self):
+        for listener in tuple(self.state_listeners):
+            try:
+                listener()
+            except Exception as err:  # noqa: BLE001 - a listener must not end the session
+                _LOGGER.debug("State listener failed (%s)", type(err).__name__)
 
     @property
     def live(self):
@@ -188,6 +197,7 @@ class NativeRelay:
                 self.clients.add(writer)
                 if self.runner is None:
                     self.runner = asyncio.create_task(self._run())
+                    self._state_changed()
                 elif self.stream is not None:
                     self.stream.clients.append(writer)
             await (
@@ -234,6 +244,7 @@ class NativeRelay:
                         upstream.clients = list(self.clients)
                     self.starts += 1
                     self.last_error = None
+                    self._state_changed()
                     feed = asyncio.create_task(upstream.feed())
             except TimeoutError:
                 self.last_error = "start_timeout"
@@ -275,6 +286,7 @@ class NativeRelay:
                 self.light = None
                 self.runner = None
                 self.retry_after = time.monotonic() + cooldown
+            self._state_changed()
 
     async def pan_tilt(
         self, action, pan_step=15, tilt_step=10, invert_pan=True, invert_tilt=False
