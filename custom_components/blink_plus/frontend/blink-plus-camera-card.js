@@ -198,7 +198,7 @@ class BlinkPlusCameraCard extends HTMLElement {
   linkedLive() {
     const query = new URLSearchParams(window.location.search);
     if (query.get("live") !== "1") return false;
-    const wanted = query.get("camera") || query.get("kamera");
+    const wanted = query.get("camera");
     return !wanted || wanted === this.config.entity;
   }
 
