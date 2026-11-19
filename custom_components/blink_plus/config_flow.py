@@ -122,6 +122,9 @@ class BlinkOptionsFlow(OptionsFlow):
             ("recording_seconds", 15, 60),
             ("max_live_seconds", 15, 300),
             ("reconnect_cooldown", 5, 300),
+            ("archive_interval", 0, 1440),
+            ("archive_hours", 1, 720),
+            ("usb_delete_days", 0, 3650),
             ("pan_step", 1, 45),
             ("tilt_step", 1, 30),
         ):
@@ -148,6 +151,7 @@ class BlinkOptionsFlow(OptionsFlow):
         schema[
             vol.Optional("recording_directory", default=values["recording_directory"])
         ] = str
+        schema[vol.Optional("archive_folder", default=values["archive_folder"])] = str
         errors = {}
         if user_input is not None:
             try:
@@ -157,7 +161,19 @@ class BlinkOptionsFlow(OptionsFlow):
             except vol.Invalid:
                 errors["base"] = "invalid_options"
             else:
-                return self.async_create_entry(title="", data={**values, **validated})
+                folder = validated["archive_folder"].strip()
+                validated["archive_folder"] = folder
+                if folder and not (
+                    folder.startswith("/")
+                    and await self.hass.async_add_executor_job(
+                        self.hass.config.is_allowed_path, folder
+                    )
+                ):
+                    errors["archive_folder"] = "invalid_folder"
+                else:
+                    return self.async_create_entry(
+                        title="", data={**values, **validated}
+                    )
         return self.async_show_form(
             step_id="init", data_schema=vol.Schema(schema), errors=errors
         )

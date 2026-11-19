@@ -21,4 +21,8 @@ DEFAULTS = {
     "invert_pan": True,
     "invert_tilt": False,
     "sidebar_panel": True,
+    "archive_folder": "",
+    "archive_interval": 60,
+    "archive_hours": 24,
+    "usb_delete_days": 0,
 }

@@ -10,6 +10,9 @@ from homeassistant.const import (
     UnitOfTemperature,
     UnitOfElectricPotential,
 )
+from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.util import dt as dt_util
+from .const import DOMAIN
 from .entity import BlinkEntity
 from .values import sensor_value
 
@@ -48,6 +51,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     discover()
     entry.async_on_unload(coordinator.async_add_listener(discover))
+    if coordinator.archive is not None and coordinator.archive.enabled:
+        async_add_entities([BlinkArchiveSensor(entry, coordinator.archive)])
 
 
 class BlinkSensor(BlinkEntity, SensorEntity):
@@ -65,3 +70,37 @@ class BlinkSensor(BlinkEntity, SensorEntity):
     @property
     def native_value(self):
         return sensor_value(self.camera, self.key)
+
+
+class BlinkArchiveSensor(SensorEntity):
+    """When the USB clip archive last saved a clip, with what it did."""
+
+    _attr_has_entity_name = True
+    _attr_name = "Last archived clip"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:archive-arrow-down"
+    _attr_should_poll = False
+
+    def __init__(self, entry, archive):
+        self.archive = archive
+        self._attr_unique_id = f"{entry.entry_id}_usb_archive"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"{entry.entry_id}_archive")},
+            name="Blink Plus clip archive",
+            manufacturer="Blink Plus",
+        )
+
+    async def async_added_to_hass(self):
+        self.archive.listeners.add(self.async_write_ha_state)
+        self.async_on_remove(
+            lambda: self.archive.listeners.discard(self.async_write_ha_state)
+        )
+
+    @property
+    def native_value(self):
+        when = self.archive.status["last_saved_at"]
+        return dt_util.parse_datetime(when) if when else None
+
+    @property
+    def extra_state_attributes(self):
+        return dict(self.archive.status)
