@@ -24,7 +24,7 @@ Live view and cloud browsing are enabled by default. A camera starts streaming w
 - A **Record local clip** button that saves MP4 video and audio to Home Assistant media storage.
 - **Blink cloud clips** in the Media browser, grouped by account and camera, with thumbnails and seekable playback.
 - A **USB clip archive** that copies the clips on a Sync Module 2's USB drive into a folder, and can delete archived clips from the drive after N days.
-- Camera motion detection switches and network arming switches.
+- Camera motion detection switches, and network arming as a switch and as an alarm panel.
 - Motion, low battery, and connectivity binary sensors where reported.
 - Temperature, calibrated temperature, battery voltage or bars, Wi-Fi signal, Sync Module signal, and last-recording sensors where supported. Unsupported data is omitted; temperature follows HA's unit settings.
 - Optional left/right/up/down/home buttons for cameras with a compatible pan/tilt mount.
@@ -95,7 +95,7 @@ Download the release's `blink-plus-v1.1.3.zip`. Extract its `custom_components/b
 
 ### Moving from the built-in Blink integration
 
-Blink Plus uses its own `blink_plus` domain and creates new entities. Existing dashboards and automations must be updated to those entities. Its network control is an **Armed switch**, not an alarm-control-panel entity. Disable the original Blink integration after checking the replacement to avoid duplicate polling and controls. No automatic migration is performed.
+Blink Plus uses its own `blink_plus` domain and creates new entities. Existing dashboards and automations must be updated to those entities. Its network control is an **Armed switch** and an alarm panel per system. Disable the original Blink integration after checking the replacement to avoid duplicate polling and controls. No automatic migration is performed.
 
 ## Updating from an earlier version
 

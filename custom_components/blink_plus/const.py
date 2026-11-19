@@ -1,7 +1,15 @@
 """Blink Plus constants."""
 
 DOMAIN = "blink_plus"
-PLATFORMS = ["camera", "sensor", "binary_sensor", "switch", "button", "light"]
+PLATFORMS = [
+    "camera",
+    "sensor",
+    "binary_sensor",
+    "switch",
+    "button",
+    "light",
+    "alarm_control_panel",
+]
 DEFAULTS = {
     "scan_interval": 300,
     "usb_clip_minutes": 0,
