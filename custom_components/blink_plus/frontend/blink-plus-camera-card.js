@@ -16,7 +16,8 @@
 // camera's readings (battery, temperature, signal, last recording) where the camera reports them.
 //
 // Options (all optional): talk, light, pan_tilt, controls, info: false hides that part;
-// light: <light entity> picks the light by hand; autoplay: false waits for a tap;
+// light: <light entity> picks the light by hand; autoplay: false waits for a tap (or a
+// ?camera=<this entity>&live=1 link);
 // overlay_opacity: 0.1-1 (default 0.6); aspect_ratio: CSS ratio (default "16 / 9"); name: text.
 const HLS_URL = "/blink_plus/frontend/hls.min.js";
 const START_WINDOW_MS = 50000; // a sleeping battery camera can take this long before video arrives
@@ -184,11 +185,21 @@ class BlinkPlusCameraCard extends HTMLElement {
   }
 
   autoStart() {
-    if (!this.config || this.live || this.config.autoplay === false) {
+    if (!this.config || this.live || (this.config.autoplay === false && !this.linkedLive())) {
       if (this.config && !this.live) this.say("", "Start live view");
       return;
     }
     this.start();
+  }
+
+  // A link such as /dashboard/door?camera=camera.front_door&live=1 (from a doorbell
+  // notification) starts this card's live view even with autoplay: false. Without a
+  // camera in the link, live=1 starts every card on the page.
+  linkedLive() {
+    const query = new URLSearchParams(window.location.search);
+    if (query.get("live") !== "1") return false;
+    const wanted = query.get("camera");
+    return !wanted || wanted === this.config.entity;
   }
 
   visibilityChanged() {

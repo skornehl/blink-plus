@@ -71,3 +71,19 @@ Nothing in the card or the page reaches into Home Assistant's internal camera pl
 The integration registers its script with Home Assistant's frontend when it starts, with its version in the address so browsers fetch the new file after an update. Dashboards that still list `/blink_plus/frontend/blink-plus-ptt.js` under Resources keep working; that entry is no longer needed and can be removed.
 
 hls.js is included unmodified under the Apache License 2.0 (`custom_components/blink_plus/frontend/hls.LICENSE`).
+
+## Open a camera from a notification
+
+A card with `autoplay: false` waits for a tap, so opening the dashboard never wakes a camera. A link with `?camera=<camera entity>&live=1` starts that card's live view right away (without `camera`, `live=1` starts every card on the page). For a doorbell notification on the Companion app:
+
+```yaml
+- action: notify.mobile_app_my_phone
+  data:
+    title: Doorbell
+    message: Someone is at the front door
+    data:
+      url: /dashboard-intercom/door?camera=camera.front_door&live=1          # iOS
+      clickAction: /dashboard-intercom/door?camera=camera.front_door&live=1  # Android
+```
+
+Run `blink_plus.start_live_view` in the same automation to wake the camera while the notification is on its way.
