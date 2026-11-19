@@ -37,6 +37,7 @@ import logging
 
 from .blinkpy_patches import apply_blinkpy_patches
 from .const import DEFAULTS, DOMAIN
+from .live_hold import LiveHold, live_status
 from .transport import NativeRelay
 from .cloud import CloudClips
 
@@ -229,6 +230,8 @@ class BlinkCoordinator(DataUpdateCoordinator):
         self.load_reductions = apply_blinkpy_patches()
         self.cloud = CloudClips(hass, self.api, self.options, self.auth_error)
         self.relays = {}
+        # Per camera serial: the hold that blink_plus.start_live_view keeps open.
+        self.holds = {}
         # Per camera serial: callbacks told the lamp state a live session reports. Kept here so a
         # light entity can listen without creating a relay (none exists while live video is off).
         self.light_listeners = {}
@@ -372,6 +375,45 @@ class BlinkCoordinator(DataUpdateCoordinator):
                 key, set()
             )
         return self.relays[key]
+
+    async def start_hold(self, camera, seconds):
+        """Open the camera's live view (or keep it open) for ``seconds``.
+
+        Returns at once with the state; ``state`` turns to ``streaming`` once the
+        camera sends video. A camera in cooldown is not touched.
+        """
+        key = str(camera.serial)
+        relay = self.relay(camera)
+        seconds = max(1, min(int(seconds), self.options["max_live_seconds"]))
+        hold = self.holds.get(key)
+        status = live_status(relay, hold)
+        if status["cooldown_s"] > 0:
+            return status
+        if hold is not None and hold.running:
+            hold.extend(seconds)
+        else:
+            hold = self.holds[key] = LiveHold(relay, seconds)
+            hold.start(
+                lambda coro: self.hass.async_create_background_task(
+                    coro, f"Blink Plus live view hold {camera.name}"
+                )
+            )
+            # Let it connect, so the answer already says "starting".
+            for _ in range(10):
+                await asyncio.sleep(0.05)
+                if relay.runner is not None or not hold.running:
+                    break
+        return live_status(relay, hold)
+
+    async def stop_hold(self, camera, end_session=False):
+        """End start_live_view's hold; with end_session also any open session."""
+        key = str(camera.serial)
+        hold = self.holds.pop(key, None)
+        if hold is not None:
+            await hold.stop()
+        relay = self.relays.get(key)
+        if end_session and relay is not None and relay.runner is not None:
+            relay.runner.cancel()
 
     async def command(self, operation, *args, timeout=60):
         """Serialize requests and their refresh; keep upstream details out of UI errors."""
@@ -523,6 +565,8 @@ class BlinkCoordinator(DataUpdateCoordinator):
             self.recording.discard(key)
 
     async def close(self):
+        await asyncio.gather(*(hold.stop() for hold in self.holds.values()))
+        self.holds.clear()
         await self.async_shutdown()
         await self.cloud.close()
         await asyncio.gather(*(relay.close() for relay in self.relays.values()))
