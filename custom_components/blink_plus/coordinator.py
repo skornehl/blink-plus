@@ -85,6 +85,37 @@ def newest_clips(rows):
     return newest
 
 
+def newest_usb_clips(items, since=None):
+    """Camera name -> start of its newest clip in a Sync Module's USB clip list.
+
+    Clips that started before ``since`` are left out, so the clips already on the
+    drive when Home Assistant starts are not reported as new motion.
+    """
+    newest = {}
+    for item in items or ():
+        try:
+            name, when = item.name, item.created_at
+        except AttributeError:
+            continue
+        if not isinstance(name, str) or not isinstance(when, datetime):
+            continue
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=timezone.utc)
+        if since is not None and when < since:
+            continue
+        if name not in newest or when > newest[name]:
+            newest[name] = when
+    return newest
+
+
+def usb_clip_lists(api):
+    """The USB clip list each Sync Module last read, as blinkpy keeps it."""
+    for sync in (getattr(api, "sync", None) or {}).values():
+        storage = getattr(sync, "_local_storage", None)
+        if isinstance(storage, dict) and storage.get("manifest"):
+            yield storage["manifest"]
+
+
 def blink_busy(result):
     """Blink accepted nothing: another command is still running on this network."""
     return (
@@ -206,6 +237,8 @@ class BlinkCoordinator(DataUpdateCoordinator):
         self.local_recordings = {}
         # Camera name -> start of the newest clip Blink has listed for it.
         self.clip_times = {}
+        # USB clips that started before this are already on the drive, not new motion.
+        self.started_at = datetime.now(timezone.utc)
         self.control_lock = asyncio.Lock()
         super().__init__(
             hass,
@@ -289,6 +322,11 @@ class BlinkCoordinator(DataUpdateCoordinator):
         await self.note_clips()
         return {str(c.serial): c.attributes for c in self.api.cameras.values()}
 
+    def _remember_clips(self, found):
+        for name, when in found.items():
+            if name not in self.clip_times or when > self.clip_times[name]:
+                self.clip_times[name] = when
+
     async def note_clips(self):
         """Remember each camera's newest clip; the motion sensors compare against it.
 
@@ -296,7 +334,13 @@ class BlinkCoordinator(DataUpdateCoordinator):
         clip Blink lists late, or one followed by a second refresh before Home
         Assistant is told, never showed as motion. A failed request keeps the
         earlier answer and never fails the poll.
+
+        Without a Blink plan the cloud list stays empty and clips only exist on a
+        Sync Module's USB drive. Their list is read by blinkpy's refresh when
+        "Read the USB clip list every N minutes" is on; it is used here as well.
         """
+        for items in usb_clip_lists(self.api):
+            self._remember_clips(newest_usb_clips(items, self.started_at))
         try:
             async with asyncio.timeout(CLIP_TIMEOUT_SECONDS):
                 data = await blink_api.request_videos(
@@ -307,10 +351,9 @@ class BlinkCoordinator(DataUpdateCoordinator):
                 "Blink clip check failed (%s)", type(err).__name__
             )
             return
-        found = newest_clips(data.get("media") if isinstance(data, dict) else None)
-        for name, when in found.items():
-            if name not in self.clip_times or when > self.clip_times[name]:
-                self.clip_times[name] = when
+        self._remember_clips(
+            newest_clips(data.get("media") if isinstance(data, dict) else None)
+        )
 
     def live_active(self):
         """Whether any camera of this account is starting or showing a live view."""
