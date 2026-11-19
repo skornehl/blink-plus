@@ -113,7 +113,7 @@ Each camera's **Motion** binary sensor turns on when Blink lists a newer clip fo
 - The sensor follows recorded clips. Motion that records nothing (system disarmed, the camera's motion detection off, the camera inside its retrigger time) does not turn it on.
 - It turns on at the first poll or command after Blink lists the clip. With the default 300-second polling interval that is up to five minutes after the event; a shorter interval shortens the delay.
 - Clips already listed when Home Assistant starts are not reported as new motion.
-- A clip saved only to a Sync Module's USB storage is reported only if the Blink library detects it.
+- **Without a Blink plan**, clips are only saved to a Sync Module's USB drive and Blink's cloud list stays empty. Set **Read the USB clip list every N minutes** above 0 (for example 2): the Motion sensor then also turns on when the USB clip list shows a newer clip for the camera. It turns on at the first poll after the list was read, so with 2 minutes it is up to about two minutes plus one polling interval after the event. Clips already on the drive when Home Assistant starts are not reported. Each read makes the module scan the drive, see [Sync Module load](#sync-module-load).
 
 ### Camera lighting
 
