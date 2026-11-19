@@ -10,6 +10,32 @@ All integration settings are available from **Settings > Devices & services > Bl
 - **Maximum live duration:** 120 seconds; range 15-300.
 - **Reconnect cooldown:** 30 seconds; range 5-300. Applies after a session reaches its time limit, fails, or is ended by the camera, so a player that keeps reconnecting cannot wake the camera repeatedly. Closing live view normally does not start the cooldown.
 
+## USB clip archive
+
+Without a Blink plan, clips are only saved to the USB drive of a Sync Module 2. The archive copies them into a folder Home Assistant may write to, for example a network share mounted under `/media`:
+
+```
+<folder>/<camera>/<YYYY-MM-DD>/<camera>_<YYYY-MM-DD_HH-MM-SS>.mp4
+```
+
+- **USB clip archive folder:** empty (off) by default. An absolute path inside a media folder or `allowlist_external_dirs`.
+- **Archive every N minutes:** 60 by default; 0 runs it only through `blink_plus.archive_clips`. The first run starts two minutes after Home Assistant.
+- **Archive clips from the last N hours:** 24 by default; range 1-720.
+- **Delete archived USB clips older than N days:** 0 (never) by default.
+
+A run reads the drive's clip list, then copies each new clip: the module uploads it to Blink's cloud on request and the file is downloaded from there. A clip that is already in the folder under its name is recognised and not copied again. A clip whose copy fails is retried in the next runs and skipped after three. Each run copies at most 50 clips, one at a time with a pause in between, never while a live view of the account is starting or open (it stops and the next run carries on). The memory of what was copied is kept per folder.
+
+**Deleting from the drive** is permanent: the clip is also gone from the Blink app. After every complete run (not paused, nothing left over), clips older than N days are deleted, but only if they are provably archived: copied to this folder or found there by name, the file exists and it is at least 50 KB. A clip whose copy failed, or that the archive does not know, stays on the drive. Keep the archive itself longer than N days. `blink_plus.delete_usb_clips` does the same on demand, with `dry_run: true` to see first what would be deleted:
+
+```yaml
+action: blink_plus.delete_usb_clips
+data:
+  older_than_days: 30
+  dry_run: true
+```
+
+It returns `deleted` (or, in a dry run, what would be), `skipped` with the reason for each clip, `errors` and `remaining`. The **Last archived clip** sensor (device *Blink Plus clip archive*) shows when the last clip was saved, with `saved_total`, `saved_last_run`, `last_result`, `last_error`, `deleted_last_run`, `deleted_total` and `last_delete_error`.
+
 ## Sync Module load
 
 A Sync Module works on one request at a time. While it is busy, the Blink app shows "system busy" and live view can fail. Blink Plus keeps its polling away from the module:

@@ -232,6 +232,8 @@ class BlinkCoordinator(DataUpdateCoordinator):
         self.relays = {}
         # Per camera serial: the hold that blink_plus.start_live_view keeps open.
         self.holds = {}
+        # Set up in async_setup_entry: the USB clip archive (off without a folder).
+        self.archive = None
         # Per camera serial: callbacks told the lamp state a live session reports. Kept here so a
         # light entity can listen without creating a relay (none exists while live video is off).
         self.light_listeners = {}

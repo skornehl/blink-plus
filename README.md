@@ -23,6 +23,7 @@ Live view and cloud browsing are enabled by default. A camera starts streaming w
 - Cached camera images plus a button to request a fresh snapshot.
 - A **Record local clip** button that saves MP4 video and audio to Home Assistant media storage.
 - **Blink cloud clips** in the Media browser, grouped by account and camera, with thumbnails and seekable playback.
+- A **USB clip archive** that copies the clips on a Sync Module 2's USB drive into a folder, and can delete archived clips from the drive after N days.
 - Camera motion detection switches and network arming switches.
 - Motion, low battery, and connectivity binary sensors where reported.
 - Temperature, calibrated temperature, battery voltage or bars, Wi-Fi signal, Sync Module signal, and last-recording sensors where supported. Unsupported data is omitted; temperature follows HA's unit settings.
@@ -106,7 +107,7 @@ Open **Blink Plus** in the sidebar, or add the **Blink Plus camera** card to a d
 
 Press **Record local clip** to save an MP4. By default, files go into the first configured HA media directory under `blink_plus`. Local recordings persist and have no automatic retention policy. The camera's `last_local_recording` attribute identifies the most recent saved file.
 
-Open **Media > Blink cloud clips**, choose your account, then a camera. This lists existing cloud clips available to your Blink account; it does not add cloud recording entitlement or browse Sync Module USB storage. Local recording and Blink cloud storage are separate features.
+Open **Media > Blink cloud clips**, choose your account, then a camera. This lists existing cloud clips available to your Blink account; it does not add cloud recording entitlement or browse Sync Module USB storage (see the USB clip archive in [Configuration](docs/CONFIGURATION.md#usb-clip-archive)). Local recording and Blink cloud storage are separate features.
 
 Enable pan/tilt only for cameras with a compatible mount in **Configure**. Adjust step size and axis inversion there. Details and automation examples are in [Configuration](docs/CONFIGURATION.md).
 
@@ -122,7 +123,7 @@ Two-way talk was verified with a Mini-class camera using real voice and tones, i
 
 ## Current limits
 
-Motion is polled rather than pushed: a Motion sensor turns on at the first poll after Blink lists the clip, up to one polling interval after the event. Light control is on/off only, for Wired Floodlight and Mini 2 cameras. A change made outside Home Assistant while the lamp was off appears at the next poll, not instantly. Battery floodlight accessories, brightness and the lamp's timer settings are not supported. Night vision, sensitivity, activity zones, remote clip settings, and Sync Module USB clips are not implemented. Camera-reported data varies by model and account. Blink cloud availability, subscription entitlements, and camera settings still apply.
+Motion is polled rather than pushed: a Motion sensor turns on at the first poll after Blink lists the clip, up to one polling interval after the event. Light control is on/off only, for Wired Floodlight and Mini 2 cameras. A change made outside Home Assistant while the lamp was off appears at the next poll, not instantly. Battery floodlight accessories, brightness and the lamp's timer settings are not supported. Night vision, sensitivity, activity zones, remote clip settings, and browsing Sync Module USB clips in the Media browser are not implemented (the USB clip archive copies them into a folder instead). Camera-reported data varies by model and account. Blink cloud availability, subscription entitlements, and camera settings still apply.
 
 Live sessions are time-limited to protect resources and batteries. Leaving a live card open can cause later reconnects; configure session duration and cooldown deliberately. Home Assistant's per-camera **Preload stream** setting is ignored for Blink Plus cameras, because it would keep waking them with nobody watching. For continuous surveillance, these cloud battery cameras have practical limits.
 

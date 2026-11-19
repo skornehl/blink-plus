@@ -35,3 +35,38 @@ play_audio:
       example: /media/sounds/be_right_there.mp3
       selector:
         text:
+
+archive_clips:
+  fields:
+    hours:
+      selector:
+        number:
+          min: 1
+          max: 720
+          unit_of_measurement: h
+    max_clips:
+      default: 50
+      selector:
+        number:
+          min: 1
+          max: 500
+
+delete_usb_clips:
+  fields:
+    older_than_days:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 3650
+          unit_of_measurement: d
+    dry_run:
+      default: false
+      selector:
+        boolean:
+    max_clips:
+      default: 50
+      selector:
+        number:
+          min: 1
+          max: 500

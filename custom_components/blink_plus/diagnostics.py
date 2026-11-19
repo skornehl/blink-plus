@@ -16,6 +16,19 @@ async def async_get_config_entry_diagnostics(hass, entry):
         "max_live_seconds": coordinator.options["max_live_seconds"],
         "usb_clip_minutes": coordinator.options["usb_clip_minutes"],
         "blinkpy_load_reductions": coordinator.load_reductions,
+        "usb_archive": {
+            key: coordinator.archive.status[key]
+            for key in (
+                "saved_total",
+                "saved_last_run",
+                "last_run",
+                "last_result",
+                "deleted_last_run",
+                "deleted_total",
+            )
+        }
+        if coordinator.archive is not None and coordinator.archive.enabled
+        else None,
         "active_streams": sum(
             r.stream is not None for r in coordinator.relays.values()
         ),
